@@ -1,7 +1,17 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+.gradle/
+build/
+!gradle-wrapper.jar
+*.jar
+*.class
+.DS_Store
+application-local.properties
 # dependencies
-/node_modules
+node_modules/
+build/
+.env.local
+.DS_Store
 /.pnp
 .pnp.js
 

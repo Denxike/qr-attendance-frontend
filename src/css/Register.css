@@ -1,0 +1,255 @@
+/* ============================================
+   REGISTER PAGE
+   Primary: #012F63 | Background: #C0C2CE
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'DM Sans', sans-serif;
+}
+
+body {
+    background: #C0C2CE;
+}
+
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #C0C2CE;
+    background-image:
+        radial-gradient(circle at 20% 20%, rgba(1, 47, 99, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(1, 47, 99, 0.06) 0%, transparent 50%);
+    padding: 24px;
+}
+
+.register-card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow:
+        0 4px 6px rgba(1, 47, 99, 0.04),
+        0 20px 60px rgba(1, 47, 99, 0.14);
+    width: 100%;
+    max-width: 500px;
+    border: 1px solid rgba(1, 47, 99, 0.06);
+}
+
+.register-header {
+    text-align: center;
+    margin-bottom: 26px;
+}
+
+.register-header h1 {
+    font-size: 24px;
+    color: #012F63;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+}
+
+.register-header p {
+    color: #7A8499;
+    font-size: 14px;
+}
+
+/* ---- Role Selector ---- */
+.role-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.role-btn {
+    flex: 1;
+    padding: 14px 12px;
+    border: 2px solid #E8EBF2;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    color: #7A8499;
+}
+
+.role-btn:hover {
+    border-color: #012F63;
+    color: #012F63;
+    background: #FAFBFD;
+}
+
+.role-btn.active {
+    border-color: #012F63;
+    background: #EAF0FB;
+    color: #012F63;
+    box-shadow: 0 4px 12px rgba(1, 47, 99, 0.12);
+}
+
+.role-btn .role-icon {
+    display: block;
+    font-size: 26px;
+    margin-bottom: 6px;
+}
+
+/* ---- Form Fields ---- */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: #012F63;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid #E8EBF2;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    color: #1A2340;
+    transition: all 0.2s ease;
+    outline: none;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #012F63;
+    box-shadow: 0 0 0 4px rgba(1, 47, 99, 0.08);
+}
+
+.form-group input.error,
+.form-group select.error {
+    border-color: #CC2B2B;
+}
+
+.form-group input::placeholder {
+    color: #B0B6C8;
+    font-weight: 400;
+}
+
+.error-message {
+    color: #CC2B2B;
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+/* ---- Form Row ---- */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ---- Submit Button ---- */
+.btn-register {
+    width: 100%;
+    padding: 13px;
+    background: #012F63;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 6px;
+    letter-spacing: 0.2px;
+    box-shadow: 0 4px 14px rgba(1, 47, 99, 0.3);
+    position: relative;
+}
+
+.btn-register:hover {
+    background: #023874;
+    box-shadow: 0 6px 20px rgba(1, 47, 99, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-register:disabled {
+    background: #A0AECB;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.btn-register.loading {
+    color: transparent;
+}
+
+.btn-register.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin: -10px 0 0 -10px;
+    border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---- Alerts ---- */
+.alert-error {
+    background: #FDECEA;
+    border: 1px solid #F0B8B8;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #B31D1D;
+    font-size: 13px;
+    margin-bottom: 18px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.alert-success {
+    background: #E8F5EE;
+    border: 1px solid #B5DEC8;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #1A7A45;
+    font-size: 13px;
+    margin-bottom: 18px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* ---- Footer ---- */
+.register-footer {
+    text-align: center;
+    margin-top: 22px;
+    color: #7A8499;
+    font-size: 14px;
+}
+
+.register-footer a {
+    color: #012F63;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.register-footer a:hover {
+    text-decoration: underline;
+}
