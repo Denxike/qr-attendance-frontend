@@ -30,9 +30,27 @@ function App() {
                         />
                         
                         {/* Add your Teacher and Admin routes here as well */}
-                        
-                        {/* Default Route */}
-                        <Route path="/" element={<Navigate to="/login" replace />} />
+                        <Route 
+                        path="/teacher/dashboard" 
+                        element={
+                            <ProtectedRoute allowedRoles={['TEACHER']}>
+                                <TeacherDashboard />
+                            </ProtectedRoute>
+                        } 
+                    />
+                    <Route
+                            path="/admin/dashboard"
+                            element={
+                                <ProtectedRoute allowedRoles={['ADMIN']}>
+                                    <AdminDashboard />
+                                </ProtectedRoute>
+                            }
+                        />
+                    
+                    {/* Default redirect */}
+                    <Route path="/" element={<Navigate to="/login" />} />
+                    <Route path="*" element={<Navigate to="/login" />} />
+                      
                     </Routes>
                 </Suspense>
             </Router>
