@@ -6,7 +6,7 @@ import '../../css/AdminDashboard.css';
 import { BookOpen, Cog, GraduationCap, Landmark, Presentation } from 'lucide-react';
 
 const AdminDashboard = () => {
-    const { user } = useAuth();
+
     const [activeTab, setActiveTab] = useState('departments');
 
     const [departments, setDepartments] = useState([]);

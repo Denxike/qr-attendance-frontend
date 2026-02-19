@@ -7,6 +7,7 @@ import { BookOpen, QrCode, School, Activity, Calculator } from 'lucide-react';
 
 const TeacherDashboard = () => {
     const { user } = useAuth();
+    console.log(user);
 
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -75,7 +76,7 @@ const fetchCourses = useCallback(async () => {
                 setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
             }
         }, 1000);
-
+        
         return () => clearInterval(interval);
     }, [activeSession?.expiryTime]); // ✅ Only depend on expiryTime, not whole object
 
