@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const api = axios.create({
@@ -82,7 +83,7 @@ export const studentAPI = {
     markAttendance: (data) =>
         api.post('/api/attendance/mark', data),
     getAvailableCourses: (studentId) =>
-        api.get(`/api/students/${studentId}/available-courses`),
+        api.get(`/api/courses/available/${studentId}`),
     
     selfEnroll: (studentId, courseId) =>
         api.post(`/api/students/${studentId}/enroll/${courseId}`),
@@ -114,7 +115,9 @@ export const adminAPI = {
     getAllStudents: () => api.get('/api/admin/students'),
     enrollStudent: (data) => api.post('/api/admin/enroll', data),
     getAllTeachers: () => api.get('/api/admin/teachers'),
-    getAllAttendance: () => api.get('/api/admin/attendance')
+    getAllAttendance: () => api.get('/api/admin/attendance'),
+    unenrollStudent: (studentId, courseId) => 
+        api.delete(`/api/admin/enroll/${studentId}/${courseId}`)
 };
 
 export default api;

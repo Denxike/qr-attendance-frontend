@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import '../css/Login.css';
 import { ScanQrCode,Eye, EyeClosed } from 'lucide-react';
 
+const API_URL = 'https://qr-attendance-backend-6m6c.onrender.com';
 const Login = () => {
 
     const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [apiError, setApiError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(''); 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -21,14 +23,21 @@ const Login = () => {
 
         try {
             // ✅ Direct fetch - no axios, no imports needed
-            const response = await fetch('http://localhost:8080/api/auth/login', {
+            const response = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ email, password })
             });
+        //      const text = await response.json();
+        // console.log('Response status:', response.status);
+        // console.log('Response text:', text);
 
+        // if (!text) {
+        //     setError('Server returned empty response. Backend may be down.');
+        //     return;
+        // }
             const data = await response.json();
 
             if (!response.ok) {
