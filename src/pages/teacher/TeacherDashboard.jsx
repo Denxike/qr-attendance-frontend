@@ -22,12 +22,9 @@ const TeacherDashboard = () => {
         durationMinutes: 5
     });
 
-    // ✅ Wrap in useCallback
-   // ✅ Use teacherId instead of userId
 const fetchCourses = useCallback(async () => {
     setLoading(true);
     try {
-        // Use teacherId for teacher-specific endpoints
         const teacherId = user.teacherId || user.userId;
         const response = await teacherAPI.getCourses(teacherId);
         setCourses(response.data);
@@ -38,7 +35,6 @@ const fetchCourses = useCallback(async () => {
     }
 }, [user.teacherId, user.userId]);
 
-    // ✅ Wrap in useCallback
     const fetchSessionAttendance = useCallback(async (sessionId) => {
         try {
             const response = await teacherAPI.getSessionAttendance(sessionId);
@@ -52,12 +48,12 @@ const fetchCourses = useCallback(async () => {
         }
     }, []);
 
-    // ✅ fetchCourses is now stable
     useEffect(() => {
+        if (user?.teacherId || user?.userId) {
         fetchCourses();
-    }, [fetchCourses]);
-
-    // Countdown timer
+    }
+    }, [fetchCourses, user?.teacherId, user?.userId]);
+    
     useEffect(() => {
         if (!activeSession) return;
 
@@ -92,8 +88,9 @@ const fetchCourses = useCallback(async () => {
     }, [activeSession?.isActive, activeSession?.sessionId, fetchSessionAttendance]);
 
     const handleGenerateQR = async (e) => {
-        e.preventDefault();
-        if (!selectedCourse) return;
+        if (e) e.preventDefault();
+        
+        if (generating || !selectedCourse) return;
 
         setGenerating(true);
         try {
