@@ -100,7 +100,8 @@ const fetchCourses = useCallback(async () => {
             const response = await teacherAPI.generateQR({
                 courseId: selectedCourse.id,
                 sessionName: qrForm.sessionName,
-                durationMinutes: parseInt(qrForm.durationMinutes)
+                durationMinutes: parseInt(qrForm.durationMinutes),
+                teacherId: user.teacherId
             });
 
             setActiveSession(response.data);
