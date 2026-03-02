@@ -137,12 +137,12 @@ const fetchCourses = useCallback(async () => {
         setGenerating(true);
          console.log('6. Set generating = true');
         try {
-            const response = await teacherAPI.generateQR({
+            const requestData = {
                 courseId: selectedCourse.id,
                 sessionName: qrForm.sessionName,
                 durationMinutes: parseInt(qrForm.durationMinutes),
                 teacherId: user.teacherId
-            });
+            };
              console.log('7. Request data:', requestData);
         console.log('8. Calling API...');
         
