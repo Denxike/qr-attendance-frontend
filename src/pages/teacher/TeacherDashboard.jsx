@@ -260,7 +260,7 @@ const fetchCourses = useCallback(async () => {
                             {activeSession?.isActive ? (
                                 <div className="qr-display">
                                     <img
-                                        src={activeSession.qrCodeImage}
+                                        src={`data:image/png;base64,${activeSession.qrCodeImage}`}
                                         alt="QR Code"
                                         className="qr-image"
                                     />
