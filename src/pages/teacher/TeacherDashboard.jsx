@@ -118,10 +118,24 @@ const fetchCourses = useCallback(async () => {
 
     const handleGenerateQR = async (e) => {
         if (e) e.preventDefault();
-        
-        if (generating || !selectedCourse) return;
+         console.log('=== QR GENERATION DEBUG START ===');
+    console.log('1. Form submitted');
+    console.log('2. selectedCourse:', selectedCourse);
+    console.log('3. user:', user);
+    console.log('4. qrForm:', qrForm);
+    console.log('5. generating state:', generating);
+          if (generating) {
+        console.log('❌ BLOCKED: Already generating');
+        return;
+    }
+    
+    if (!selectedCourse) {
+        console.log('❌ BLOCKED: No course selected');
+        return;
+    }
 
         setGenerating(true);
+         console.log('6. Set generating = true');
         try {
             const response = await teacherAPI.generateQR({
                 courseId: selectedCourse.id,
@@ -129,10 +143,25 @@ const fetchCourses = useCallback(async () => {
                 durationMinutes: parseInt(qrForm.durationMinutes),
                 teacherId: user.teacherId
             });
-
+             console.log('7. Request data:', requestData);
+        console.log('8. Calling API...');
+        
+        const response = await teacherAPI.generateQR(requestData);
+        
+        console.log('9. ✅ API Response received:', response);
+        console.log('10. Response data:', response.data);
+        console.log('11. Response.data.isActive:', response.data?.isActive);
+        console.log('12. Response.data.qrCodeImage:', response.data?.qrCodeImage?.substring(0, 50) + '...');
+        console.log('13. Response.data.qrCodeData:', response.data?.qrCodeData?.substring(0, 50) + '...');
+        
+        console.log('14. Setting activeSession...');
+        
             setActiveSession(response.data);
+            console.log('15. Clearing attendance...');
             setSessionAttendance([]);
+             console.log('16. Resetting form...');
             setQrForm({ sessionName: '', durationMinutes: 5 });
+             console.log('17. ✅ Success!');
 
         } catch (error) {
             console.error('Generate QR error:', error);
