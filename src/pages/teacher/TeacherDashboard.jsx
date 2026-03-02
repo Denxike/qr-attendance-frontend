@@ -53,7 +53,7 @@ const fetchCourses = useCallback(async () => {
     }
     }, [fetchCourses, user?.teacherId, user?.userId]);
     
-   seEffect(() => {
+   useEffect(() => {
         // Clear previous timer
         if (timerRef.current) {
             clearInterval(timerRef.current);
