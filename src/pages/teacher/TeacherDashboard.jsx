@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { teacherAPI } from '../../services/api';
 import Navbar from '../../components/Navbar';
@@ -16,6 +16,8 @@ const TeacherDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
     const [timeLeft, setTimeLeft] = useState(null);
+    const timerRef = useRef(null);
+    const pollRef = useRef(null);
 
     const [qrForm, setQrForm] = useState({
         sessionName: '',
@@ -36,13 +38,10 @@ const fetchCourses = useCallback(async () => {
 }, [user.teacherId, user.userId]);
 
     const fetchSessionAttendance = useCallback(async (sessionId) => {
+        if(!sessionId) return;
         try {
             const response = await teacherAPI.getSessionAttendance(sessionId);
             setSessionAttendance(response.data);
-            setActiveSession(prev => ({
-                ...prev,
-                totalScans: response.data.length
-            }));
         } catch (error) {
             console.error('Failed to fetch attendance:', error);
         }
@@ -54,38 +53,68 @@ const fetchCourses = useCallback(async () => {
     }
     }, [fetchCourses, user?.teacherId, user?.userId]);
     
-    useEffect(() => {
-        if (!activeSession) return;
+   seEffect(() => {
+        // Clear previous timer
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
 
-        const interval = setInterval(() => {
+        if (!activeSession?.expiryTime) {
+            setTimeLeft(null);
+            return;
+        }
+
+        const updateTimer = () => {
             const expiry = new Date(activeSession.expiryTime);
             const now = new Date();
             const diff = Math.floor((expiry - now) / 1000);
 
             if (diff <= 0) {
                 setTimeLeft('Expired');
-                setActiveSession(prev => ({ ...prev, isActive: false }));
-                clearInterval(interval);
+                setActiveSession(prev => prev ? { ...prev, isActive: false } : null);
+                if (timerRef.current) clearInterval(timerRef.current);
             } else {
                 const mins = Math.floor(diff / 60);
                 const secs = diff % 60;
                 setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
             }
-        }, 1000);
-        
-        return () => clearInterval(interval);
-    }, [activeSession?.expiryTime]); // ✅ Only depend on expiryTime, not whole object
+        };
+
+        updateTimer(); // Run immediately
+        timerRef.current = setInterval(updateTimer, 1000);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, [activeSession?.sessionId, activeSession?.expiryTime]);// ✅ Only depend on expiryTime, not whole object
 
     // Poll attendance every 5 seconds
     useEffect(() => {
-        if (!activeSession?.isActive) return;
+        // Clear previous poll
+        if (pollRef.current) {
+            clearInterval(pollRef.current);
+        }
 
-        const interval = setInterval(() => {
+        if (!activeSession?.isActive || !activeSession?.sessionId) {
+            return;
+        }
+
+        // Fetch immediately
+        fetchSessionAttendance(activeSession.sessionId);
+
+        // Then poll every 5 seconds
+        pollRef.current = setInterval(() => {
             fetchSessionAttendance(activeSession.sessionId);
         }, 5000);
 
-        return () => clearInterval(interval);
-    }, [activeSession?.isActive, activeSession?.sessionId, fetchSessionAttendance]);
+        return () => {
+            if (pollRef.current) {
+                clearInterval(pollRef.current);
+            }
+        };
+    }, [activeSession?.sessionId, activeSession?.isActive, fetchSessionAttendance]);
 
     const handleGenerateQR = async (e) => {
         if (e) e.preventDefault();
@@ -103,9 +132,10 @@ const fetchCourses = useCallback(async () => {
 
             setActiveSession(response.data);
             setSessionAttendance([]);
-            setQrForm({ sessionName: '', durationMinutes: 5, location: '' });
+            setQrForm({ sessionName: '', durationMinutes: 5 });
 
         } catch (error) {
+            console.error('Generate QR error:', error);
             alert(error.response?.data?.message || 'Failed to generate QR code');
         } finally {
             setGenerating(false);
@@ -230,7 +260,7 @@ const fetchCourses = useCallback(async () => {
                             {activeSession?.isActive ? (
                                 <div className="qr-display">
                                     <img
-                                        src={`data:image/png;base64,${activeSession.qrCodeImage}`}
+                                        src={activeSession.qrCodeData}
                                         alt="QR Code"
                                         className="qr-image"
                                     />
