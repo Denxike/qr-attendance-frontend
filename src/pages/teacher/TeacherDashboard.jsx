@@ -293,6 +293,15 @@ const fetchCourses = useCallback(async () => {
                                         alt="QR Code"
                                         className="qr-image"
                                     />
+                                    <div>
+  <p>QR debug</p>
+  <p>{activeSession?.qrCodeImage?.substring(0,40)}</p>
+
+  <img
+    src={`data:image/png;base64,${activeSession?.qrCodeImage}`}
+    style={{width:200}}
+  />
+</div>
                                     <div className="qr-info">
                                         <div className="qr-course">{activeSession.courseName}</div>
                                         <div className="qr-session">{activeSession.sessionName}</div>
