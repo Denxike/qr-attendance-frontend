@@ -65,11 +65,11 @@ const fetchCourses = useCallback(async () => {
             return;
         }
        console.log('⏱️ Starting timer for session:', activeSession.sessionId);
-       console.log('⏱️ Expiry time:', activeSession.expiryTime);
+       console.log('⏱️ Expiry time:', activeSession.expiryTime + 'Z');
 
 
         const updateTimer = () => {
-            const expiry = new Date(activeSession.expiryTime);
+            const expiry = new Date(activeSession.expiryTime + 'Z');
             const now = new Date();
             const diff = Math.floor((expiry - now) / 1000);
 
