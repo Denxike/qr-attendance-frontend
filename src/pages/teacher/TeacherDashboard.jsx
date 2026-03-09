@@ -60,16 +60,23 @@ const fetchCourses = useCallback(async () => {
         }
 
         if (!activeSession?.expiryTime) {
+             console.log('⏱️ No expiry time, skipping timer');
             setTimeLeft(null);
             return;
         }
+       console.log('⏱️ Starting timer for session:', activeSession.sessionId);
+       console.log('⏱️ Expiry time:', activeSession.expiryTime);
+
 
         const updateTimer = () => {
             const expiry = new Date(activeSession.expiryTime);
             const now = new Date();
             const diff = Math.floor((expiry - now) / 1000);
 
+             console.log('⏱️ Timer tick - diff:', diff, 'seconds');
+            
             if (diff <= 0) {
+                console.log('⏱️ EXPIRED! Setting isActive to false');
                 setTimeLeft('Expired');
                 setActiveSession(prev => prev ? { ...prev, isActive: false } : null);
                 if (timerRef.current) clearInterval(timerRef.current);
@@ -187,6 +194,10 @@ const fetchCourses = useCallback(async () => {
         setActiveSession(null);
         setSessionAttendance([]);
     };
+    console.log('🔍 Render check:');
+console.log('activeSession:', activeSession);
+console.log('activeSession?.isActive:', activeSession?.isActive);
+console.log('Will show QR?', activeSession?.isActive ? 'YES' : 'NO');
 
     return (
         <div className="dashboard">
@@ -288,11 +299,12 @@ const fetchCourses = useCallback(async () => {
                         <div className="section-body">
                            {activeSession?.isActive ? (
     <div className="qr-display">
+        <h3>DEBUG: QR Display Section Rendered!</h3>
         <img
             src={`data:image/png;base64,${activeSession.qrCodeImage}`}
             alt="QR Code"
             className="qr-image"
-            onError={(e) => console.error('QR Image failed to load:', e)}
+            style={{ width: '300px', height: '300px', border: '2px solid red' }}
         />
         <div className="qr-info">
             <div className="qr-course">{activeSession.courseName}</div>
