@@ -286,36 +286,28 @@ const fetchCourses = useCallback(async () => {
                             </h3>
                         </div>
                         <div className="section-body">
-                            {activeSession?.isActive ? (
-                                <div className="qr-display">
-                                    <img
-                                        src={`data:image/png;base64,${activeSession.qrCodeImage}`}
-                                        alt="QR Code"
-                                        className="qr-image"
-                                    />
-                                    <div>
-  <p>QR debug</p>
-  <p>{activeSession?.qrCodeImage?.substring(0,40)}</p>
-
-  <img
-    src={`data:image/png;base64,${activeSession?.qrCodeImage}`}
-    style={{width:200}}
-  />
-</div>
-                                    <div className="qr-info">
-                                        <div className="qr-course">{activeSession.courseName}</div>
-                                        <div className="qr-session">{activeSession.sessionName}</div>
-                                    </div>
-                                    <div className={`qr-timer ${timeLeft === 'Expired' ? 'expired' : ''}`}>
-                                        ⏱ {timeLeft || 'Loading...'}
-                                    </div>
-                                    <div className="qr-scans">
-                                        <span>{sessionAttendance.length}</span> students scanned
-                                    </div>
-                                    <button className="btn-deactivate" onClick={handleDeactivate}>
-                                        End Session
-                                    </button>
-                                </div>
+                           {activeSession?.isActive ? (
+    <div className="qr-display">
+        <img
+            src={`data:image/png;base64,${activeSession.qrCodeImage}`}
+            alt="QR Code"
+            className="qr-image"
+            onError={(e) => console.error('QR Image failed to load:', e)}
+        />
+        <div className="qr-info">
+            <div className="qr-course">{activeSession.courseName}</div>
+            <div className="qr-session">{activeSession.sessionName}</div>
+        </div>
+        <div className={`qr-timer ${timeLeft === 'Expired' ? 'expired' : ''}`}>
+            ⏱ {timeLeft || 'Loading...'}
+        </div>
+        <div className="qr-scans">
+            <span>{sessionAttendance.length}</span> students scanned
+        </div>
+        <button className="btn-deactivate" onClick={handleDeactivate}>
+            End Session
+        </button>
+    </div>
                             ) : (
                                 selectedCourse ? (
                                     <form className="generate-form" onSubmit={handleGenerateQR}>
