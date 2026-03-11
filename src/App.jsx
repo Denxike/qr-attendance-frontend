@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react'; // Added lazy and Suspense
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import MarkAttendance from './pages/student/MarkAttendance';
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
@@ -50,7 +51,7 @@ function App() {
                     {/* Default redirect */}
                     <Route path="/" element={<Navigate to="/login" />} />
                     <Route path="*" element={<Navigate to="/login" />} />
-                      
+                      <Route path="/mark-attendance" element={<MarkAttendance />} />
                     </Routes>
                 </Suspense>
             </Router>
