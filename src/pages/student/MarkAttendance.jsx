@@ -54,13 +54,27 @@ const MarkAttendance = () => {
                 navigate('/student-dashboard');
             }, 2000);
 
-        } catch (error) {
-            console.error('Mark attendance error:', error);
-            setMessage({ 
-                type: 'error', 
-                text: error.response?.data?.message || 'Failed to mark attendance. Please try again.' 
-            });
-        } finally {
+        }  console.error('❌ Mark attendance error:', error);
+    console.error('Error response:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    
+    let errorMessage = 'Failed to mark attendance. Please try again.';
+    
+    if (error.response?.status === 400) {
+        errorMessage = 'Invalid request. Please check the QR code and try again.';
+    } else if (error.response?.status === 401) {
+        errorMessage = 'Session expired. Please login again.';
+    } else if (error.response?.status === 404) {
+        errorMessage = 'QR code not found or expired.';
+    } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+    }
+    
+    setMessage({ 
+        type: 'error', 
+        text: errorMessage
+    });
+} finally {
             setLoading(false);
         }
     };
