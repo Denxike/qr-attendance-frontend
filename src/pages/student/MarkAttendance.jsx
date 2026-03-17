@@ -37,10 +37,11 @@ const MarkAttendance = () => {
         setMessage({ type: '', text: '' });
 
         try {
-            const response = await studentAPI.markAttendance({
-                studentId: user.studentId,
-                qrToken: tokenToSubmit
-            });
+            const requestData = {
+            studentId: Number(user.studentId), // ✅ Ensure it's a number
+            qrToken: String(tokenToSubmit)     // ✅ Ensure it's a string
+        };
+            const response = await studentAPI.markAttendance(requestData);
 
             setMessage({ 
                 type: 'success', 
