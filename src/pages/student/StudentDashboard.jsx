@@ -108,7 +108,7 @@ const StudentDashboard = () => {
     }, [handleAttendanceMark, stopScanner]);
 
     useEffect(() => {
-        if (showScanner && !scannerStarted.current) setTimeout(() => startScanner(), 500);
+        if (showScanner && !scannerStarted.current) setTimeout(() => startScanner(), 5000);
         if (!showScanner) stopScanner();
     }, [showScanner, startScanner, stopScanner]);
 
