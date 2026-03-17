@@ -4,7 +4,7 @@ import axios from 'axios';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080' ||'https://qr-attendance-backend-6m6c.onrender.com';
 
 const api = axios.create({
-    baseURL: BASE_URL,
+    baseURL: 'https://qr-attendance-backend-6m6c.onrender.com',
     headers: {
         'Content-Type': 'application/json'
     }
