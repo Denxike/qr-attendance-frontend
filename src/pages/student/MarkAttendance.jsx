@@ -54,7 +54,8 @@ const MarkAttendance = () => {
                 navigate('/student-dashboard');
             }, 2000);
 
-        }  console.error('❌ Mark attendance error:', error);
+        } catch (error){
+    console.error('❌ Mark attendance error:', error);
     console.error('Error response:', error.response?.data);
     console.error('Error status:', error.response?.status);
     
