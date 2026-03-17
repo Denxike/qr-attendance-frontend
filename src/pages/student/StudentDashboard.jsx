@@ -77,8 +77,8 @@ const StudentDashboard = () => {
     const handleAttendanceMark = useCallback(async (token) => {
         try {
             const response = await studentAPI.markAttendance({
-                qrToken: token,
-                studentId
+                qrToken: String(token),
+                studentId: Number(user.studentId)
             });
             setScanResult({
                 type: 'success',
