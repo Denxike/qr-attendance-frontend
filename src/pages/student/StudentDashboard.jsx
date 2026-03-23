@@ -19,6 +19,9 @@ const StudentDashboard = () => {
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [enrollingId, setEnrollingId] = useState(null);
+    const [qrToken, setQrToken] = useState('');
+    const [marking, setMarking] = useState(false);
+    const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
 
     // QR Scanner state
     const [showScanner, setShowScanner] = useState(false);
@@ -74,38 +77,71 @@ const StudentDashboard = () => {
         }
     }, []);
 
-    const handleAttendanceMark = useCallback(async (token) => {
-        try {
-            const response = await studentAPI.markAttendance({
-                qrToken: String(token),
-                studentId: Number(user.studentId)
-            });
-            setScanResult({
-                type: 'success',
-                message: `✅ Attendance marked! Course: ${response.data.courseName} | Status: ${response.data.status}`
-            });
-            fetchData();
-        } catch (error) {
-            const message = error.response?.data?.message || 'Failed to mark attendance';
-            setScanResult({ type: 'error', message: `❌ ${message}` });
-        }
-    }, [studentId, fetchData]);
+    const handleMarkAttendance = async (e) => {
+    e.preventDefault();
+    
+    console.log('=== DASHBOARD MARK ATTENDANCE ===');
+    console.log('1. QR Token:', qrToken);
+    console.log('2. User:', user);
+    console.log('3. Student ID:', user.studentId);
+    
+    if (!qrToken.trim()) {
+        setAttendanceMessage({ type: 'error', text: 'Please enter a QR token' });
+        return;
+    }
 
-    const startScanner = useCallback(async () => {
-        try {
-            const scanner = new Html5Qrcode('qr-reader');
-            scannerRef.current = scanner;
-            scannerStarted.current = true;
-            await scanner.start(
-                { facingMode: 'environment' },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText) => { handleAttendanceMark(decodedText); stopScanner(); },
-                () => {}
-            );
-        } catch (err) {
-            console.error('Scanner failed:', err);
+    setMarking(true);
+    setAttendanceMessage({ type: '', text: '' });
+
+    try {
+        const requestData = {
+            studentId: Number(user.studentId),
+            qrToken: qrToken.trim()
+        };
+        
+        console.log('4. Request data:', requestData);
+        
+        const response = await studentAPI.markAttendance(requestData);
+        
+        console.log('5. ✅ Success:', response.data);
+
+        setAttendanceMessage({ 
+            type: 'success', 
+            text: '✅ Attendance marked successfully!' 
+        });
+        
+        setQrToken('');
+        
+        // Refresh attendance history
+        setTimeout(() => {
+            fetchAttendanceHistory();
+            setAttendanceMessage({ type: '', text: '' });
+        }, 2000);
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+        console.error('Error response:', error.response?.data);
+        
+        let errorMessage = 'Failed to mark attendance';
+        
+        if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+        } else if (error.response?.status === 400) {
+            errorMessage = 'Invalid or expired QR code';
+        } else if (error.response?.status === 401) {
+            errorMessage = 'Session expired. Please login again.';
+        } else if (error.message) {
+            errorMessage = error.message;
         }
-    }, [handleAttendanceMark, stopScanner]);
+        
+        setAttendanceMessage({ 
+            type: 'error', 
+            text: errorMessage 
+        });
+    } finally {
+        setMarking(false);
+    }
+};
 
     useEffect(() => {
         if (showScanner && !scannerStarted.current) setTimeout(() => startScanner(), 5000);
