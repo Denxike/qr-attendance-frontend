@@ -1,453 +1,327 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { studentAPI } from '../../services/api';
 import Navbar from '../../components/Navbar';
-import { Html5Qrcode } from 'html5-qrcode';
 import '../../css/StudentDashboard.css';
-import { BookOpen, Presentation,  Percent,  GraduationCap, TableProperties, Camera, Landmark, TableCellsSplit } from 'lucide-react';
 
 const StudentDashboard = () => {
     const { user } = useAuth();
-
-    // Tab state
-    const [activeTab, setActiveTab] = useState('enrolled');
-
-    // Data state
+    const [activeTab, setActiveTab] = useState('courses');
     const [enrolledCourses, setEnrolledCourses] = useState([]);
     const [availableCourses, setAvailableCourses] = useState([]);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
-    const [selectedCourse, setSelectedCourse] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [enrollingId, setEnrollingId] = useState(null);
+    const [enrolling, setEnrolling] = useState(false);
+    
+    // Mark attendance states
     const [qrToken, setQrToken] = useState('');
     const [marking, setMarking] = useState(false);
     const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
 
-    // QR Scanner state
-    const [showScanner, setShowScanner] = useState(false);
-    const [scanResult, setScanResult] = useState(null);
-    const [manualToken, setManualToken] = useState('');
-    const scannerRef = useRef(null);
-    const scannerStarted = useRef(false);
+    useEffect(() => {
+        if (user?.studentId) {
+            fetchData();
+        }
+    }, [user]);
 
-    const studentId = user.studentId || user.userId;
-
-    const fetchData = useCallback(async () => {
-        setLoading(true);
+    const fetchData = async () => {
         try {
-            const [enrolledRes, availableRes, attendanceRes] = await Promise.all([
-                studentAPI.getEnrolledCourses(studentId),
-                studentAPI.getAvailableCourses(studentId),
-                studentAPI.getAttendanceHistory(studentId)
+            setLoading(true);
+            await Promise.all([
+                fetchEnrolledCourses(),
+                fetchAvailableCourses(),
+                fetchAttendanceHistory()
             ]);
-            setEnrolledCourses(enrolledRes.data);
-            setAvailableCourses(availableRes.data);
-            setAttendanceHistory(attendanceRes.data);
         } catch (error) {
-            console.error('Failed to load data:', error);
+            console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
-    }, [studentId]);
+    };
 
-    useEffect(() => { fetchData(); }, [fetchData]);
-
-    // Enroll in a course
-    const handleEnroll = async (courseId) => {
-        setEnrollingId(courseId);
+    const fetchEnrolledCourses = async () => {
         try {
-            await studentAPI.selfEnroll(studentId, courseId);
-            await fetchData(); // Refresh all data
-            alert('Successfully enrolled!');
+            const response = await studentAPI.getEnrolledCourses(user.studentId);
+            setEnrolledCourses(response.data || []);
         } catch (error) {
-            alert(error.response?.data?.message || 'Enrollment failed');
-        } finally {
-            setEnrollingId(null);
+            console.error('Error fetching enrolled courses:', error);
+            setEnrolledCourses([]);
         }
     };
 
-    // QR Scanner
-    const stopScanner = useCallback(async () => {
-        if (scannerRef.current && scannerStarted.current) {
-            try {
-                await scannerRef.current.stop();
-                scannerRef.current = null;
-                scannerStarted.current = false;
-            } catch (err) {}
+    const fetchAvailableCourses = async () => {
+        try {
+            const response = await studentAPI.getAvailableCourses(user.studentId);
+            setAvailableCourses(response.data || []);
+        } catch (error) {
+            console.error('Error fetching available courses:', error);
+            setAvailableCourses([]);
         }
-    }, []);
+    };
+
+    const fetchAttendanceHistory = async () => {
+        try {
+            const response = await studentAPI.getAttendanceHistory(user.studentId);
+            setAttendanceHistory(response.data || []);
+        } catch (error) {
+            console.error('Error fetching attendance:', error);
+            setAttendanceHistory([]);
+        }
+    };
+
+    const handleEnroll = async (courseId) => {
+        try {
+            setEnrolling(true);
+            await studentAPI.selfEnroll(user.studentId, courseId);
+            await fetchData();
+            alert('Successfully enrolled in course!');
+        } catch (error) {
+            console.error('Enrollment error:', error);
+            alert(error.response?.data?.message || 'Failed to enroll in course');
+        } finally {
+            setEnrolling(false);
+        }
+    };
 
     const handleMarkAttendance = async (e) => {
-    e.preventDefault();
-    
-    console.log('=== DASHBOARD MARK ATTENDANCE ===');
-    console.log('1. QR Token:', qrToken);
-    console.log('2. User:', user);
-    console.log('3. Student ID:', user.studentId);
-    
-    if (!qrToken.trim()) {
-        setAttendanceMessage({ type: 'error', text: 'Please enter a QR token' });
-        return;
-    }
-
-    setMarking(true);
-    setAttendanceMessage({ type: '', text: '' });
-
-    try {
-        const requestData = {
-            studentId: Number(user.studentId),
-            qrToken: qrToken.trim()
-        };
+        e.preventDefault();
         
-        console.log('4. Request data:', requestData);
-        
-        const response = await studentAPI.markAttendance(requestData);
-        
-        console.log('5. ✅ Success:', response.data);
-
-        setAttendanceMessage({ 
-            type: 'success', 
-            text: '✅ Attendance marked successfully!' 
-        });
-        
-        setQrToken('');
-        
-        // Refresh attendance history
-        setTimeout(() => {
-            fetchAttendanceHistory();
-            setAttendanceMessage({ type: '', text: '' });
-        }, 2000);
-
-    } catch (error) {
-        console.error('❌ Error:', error);
-        console.error('Error response:', error.response?.data);
-        
-        let errorMessage = 'Failed to mark attendance';
-        
-        if (error.response?.data?.message) {
-            errorMessage = error.response.data.message;
-        } else if (error.response?.status === 400) {
-            errorMessage = 'Invalid or expired QR code';
-        } else if (error.response?.status === 401) {
-            errorMessage = 'Session expired. Please login again.';
-        } else if (error.message) {
-            errorMessage = error.message;
+        if (!qrToken.trim()) {
+            setAttendanceMessage({ type: 'error', text: 'Please enter a QR token' });
+            return;
         }
-        
-        setAttendanceMessage({ 
-            type: 'error', 
-            text: errorMessage 
-        });
-    } finally {
-        setMarking(false);
+
+        setMarking(true);
+        setAttendanceMessage({ type: '', text: '' });
+
+        try {
+            const requestData = {
+                studentId: Number(user.studentId),
+                qrToken: qrToken.trim()
+            };
+            
+            await studentAPI.markAttendance(requestData);
+
+            setAttendanceMessage({ 
+                type: 'success', 
+                text: '✅ Attendance marked successfully!' 
+            });
+            
+            setQrToken('');
+            
+            setTimeout(() => {
+                fetchAttendanceHistory();
+                setAttendanceMessage({ type: '', text: '' });
+            }, 2000);
+
+        } catch (error) {
+            console.error('Error:', error);
+            
+            let errorMessage = 'Failed to mark attendance';
+            
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.response?.status === 400) {
+                errorMessage = 'Invalid or expired QR code';
+            }
+            
+            setAttendanceMessage({ 
+                type: 'error', 
+                text: errorMessage 
+            });
+        } finally {
+            setMarking(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="student-dashboard">
+                <Navbar />
+                <div className="loading">Loading...</div>
+            </div>
+        );
     }
-};
-
-    useEffect(() => {
-        if (showScanner && !scannerStarted.current) setTimeout(() => startScanner(), 5000);
-        if (!showScanner) stopScanner();
-    }, [showScanner, startScanner, stopScanner]);
-
-    const handleCloseScanner = () => {
-        stopScanner();
-        setShowScanner(false);
-        setScanResult(null);
-        setManualToken('');
-    };
-
-    // Attendance percentage per course
-    const getPercentage = (courseId) => {
-        const records = attendanceHistory.filter(a => a.courseId === courseId);
-        if (!records.length) return 0;
-        const present = records.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length;
-        return Math.round((present / records.length) * 100);
-    };
-
-    const getBarColor = (p) => p >= 75 ? 'fill-green' : p >= 50 ? 'fill-orange' : 'fill-red';
-
-    const filteredAttendance = selectedCourse
-        ? attendanceHistory.filter(a => a.courseId === selectedCourse.id)
-        : attendanceHistory;
-
-    const presentCount = attendanceHistory.filter(
-        a => a.status === 'PRESENT' || a.status === 'LATE'
-    ).length;
-
-    const overallPct = attendanceHistory.length > 0
-        ? Math.round((presentCount / attendanceHistory.length) * 100)
-        : 0;
 
     return (
-        <div className="dashboard">
+        <div className="student-dashboard">
             <Navbar />
-            <div className="dashboard-content">
-
-                {/* Welcome */}
-                <div className="dashboard-welcome">
-                    <h2>Welcome, {user?.fullName} </h2>
-                    <p>Manage your courses and track attendance</p>
+            <div className="dashboard-container">
+                <div className="dashboard-header">
+                    <h1>Welcome, {user?.fullName}!</h1>
+                    <p>Student ID: {user?.studentId || 'N/A'}</p>
                 </div>
 
-                {/* Stats */}
-                <div className="stats-row">
-                    <div className="stat-card">
-                        <div className="stat-icon blue"><BookOpen /></div>
-                        <div className="stat-info">
-                            <div className="stat-value">{enrolledCourses.length}</div>
-                            <div className="stat-label">Enrolled Courses</div>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon green"><Presentation /></div>
-                        <div className="stat-info">
-                            <div className="stat-value">{presentCount}</div>
-                            <div className="stat-label">Classes Attended</div>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon orange"><Percent /></div>
-                        <div className="stat-info">
-                            <div className="stat-value">{overallPct}%</div>
-                            <div className="stat-label">Overall Attendance</div>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-icon purple"><GraduationCap /></div>
-                        <div className="stat-info">
-                            <div className="stat-value">{availableCourses.length}</div>
-                            <div className="stat-label">Available Courses</div>
-                        </div>
-                    </div>
+                <div className="tabs-nav">
+                    <button 
+                        className={`tab-btn ${activeTab === 'courses' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('courses')}
+                    >
+                        📚 My Courses
+                    </button>
+                    <button 
+                        className={`tab-btn ${activeTab === 'register' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('register')}
+                    >
+                        ➕ Register Courses
+                    </button>
+                    <button 
+                        className={`tab-btn ${activeTab === 'mark' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('mark')}
+                    >
+                        ✓ Mark Attendance
+                    </button>
+                    <button 
+                        className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('history')}
+                    >
+                        📊 Attendance History
+                    </button>
                 </div>
 
-                {/* Tabs */}
-                <div className="tabs-container">
-                    <div className="tabs-header">
-                        <button
-                            className={`tab-btn ${activeTab === 'enrolled' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('enrolled')}
-                        >
-                            <BookOpen /> My Courses
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === 'register' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('register')}
-                        >
-                            <GraduationCap /> Register Courses
-                            {availableCourses.length > 0 && (
-                                <span className="tab-badge">{availableCourses.length}</span>
-                            )}
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('history')}
-                        >
-                            <TableProperties /> Attendance History
-                        </button>
-
-                        {/* Scan QR Button */}
-                        <button
-                            className="btn-scan"
-                            onClick={() => setShowScanner(true)}
-                            style={{ marginLeft: 'auto' }}
-                        >
-                            <Camera /> Scan QR
-                        </button>
-                    </div>
-
-                    {/* Tab: Enrolled Courses */}
-                    {activeTab === 'enrolled' && (
-                        <div className="tab-content">
-                            {loading ? (
-                                <div className="loading-spinner">Loading...</div>
-                            ) : enrolledCourses.length === 0 ? (
-                                <div className="empty-state">
-                                    <span className="empty-icon">📚</span>
-                                    <p>No enrolled courses yet</p>
-                                    <button
-                                        className="btn-create-qr"
-                                        style={{ marginTop: '12px', width: 'auto', padding: '10px 20px' }}
-                                        onClick={() => setActiveTab('register')}
-                                    >
-                                        Browse Available Courses
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="courses-grid">
-                                    {enrolledCourses.map(course => {
-                                        const pct = getPercentage(course.id);
-                                        return (
-                                            <div
-                                                key={course.id}
-                                                className={`course-card ${selectedCourse?.id === course.id ? 'selected' : ''}`}
-                                                onClick={() => setSelectedCourse(
-                                                    selectedCourse?.id === course.id ? null : course
-                                                )}
-                                            >
-                                                <span className="course-code">{course.courseCode}</span>
-                                                <div className="course-name">{course.courseName}</div>
-                                                <div className="course-attendance">
-                                                    Attendance: {pct}%
-                                                </div>
-                                                <div className="attendance-bar">
-                                                    <div
-                                                        className={`attendance-bar-fill ${getBarColor(pct)}`}
-                                                        style={{ width: `${pct}%` }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Tab: Register Courses */}
-                    {activeTab === 'register' && (
-                        <div className="tab-content">
-                            {loading ? (
-                                <div className="loading-spinner">Loading available courses...</div>
-                            ) : availableCourses.length === 0 ? (
-                                <div className="empty-state">
-                                    <span className="empty-icon"><GraduationCap /></span>
-                                    <p>No available courses to register</p>
-                                </div>
-                            ) : (
-                                <div className="available-courses-grid">
-                                    {availableCourses.map(course => (
-                                        <div key={course.id} className="available-course-card">
-                                            <div className="available-course-header">
-                                                <span className="course-code">{course.courseCode}</span>
-                                                <span className="course-credits">
-                                                    {course.credits} cr
-                                                </span>
-                                            </div>
-                                            <div className="available-course-name">
-                                                {course.courseName}
-                                            </div>
-                                            <div className="available-course-meta">
-                                                <span><Presentation /> {course.teacherName || 'TBA'}</span>
-                                                <span><Landmark /> {course.departmentName || 'N/A'}</span>
-                                            </div>
-                                            {course.description && (
-                                                <div className="available-course-desc">
-                                                    {course.description}
-                                                </div>
-                                            )}
-                                            <button
-                                                className="btn-enroll"
-                                                onClick={() => handleEnroll(course.id)}
-                                                disabled={enrollingId === course.id}
-                                            >
-                                                {enrollingId === course.id
-                                                    ? 'Enrolling...'
-                                                    : '+ Enroll Now'}
-                                            </button>
+                {activeTab === 'courses' && (
+                    <div className="tab-content">
+                        <h2>My Enrolled Courses</h2>
+                        {enrolledCourses.length === 0 ? (
+                            <div className="empty-state">
+                                <p>You are not enrolled in any courses yet.</p>
+                                <p>Go to "Register Courses" tab to enroll.</p>
+                            </div>
+                        ) : (
+                            <div className="courses-grid">
+                                {enrolledCourses.map(course => (
+                                    <div key={course.id} className="course-card">
+                                        <div className="course-code">{course.courseCode}</div>
+                                        <div className="course-name">{course.courseName}</div>
+                                        <div className="course-details">
+                                            <p><strong>Teacher:</strong> {course.teacherName}</p>
+                                            <p><strong>Credits:</strong> {course.credits}</p>
+                                            <p><strong>Department:</strong> {course.departmentName}</p>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Tab: Attendance History */}
-                    {activeTab === 'history' && (
-                        <div className="tab-content">
-                            {/* Course filter */}
-                            <div className="filter-row">
-                                <button
-                                    className={`filter-btn ${!selectedCourse ? 'active' : ''}`}
-                                    onClick={() => setSelectedCourse(null)}
-                                >
-                                    All Courses
-                                </button>
-                                {enrolledCourses.map(c => (
-                                    <button
-                                        key={c.id}
-                                        className={`filter-btn ${selectedCourse?.id === c.id ? 'active' : ''}`}
-                                        onClick={() => setSelectedCourse(
-                                            selectedCourse?.id === c.id ? null : c
-                                        )}
-                                    >
-                                        {c.courseCode}
-                                    </button>
+                                    </div>
                                 ))}
-                            </div>
-
-                            {loading ? (
-                                <div className="loading-spinner">Loading history...</div>
-                            ) : filteredAttendance.length === 0 ? (
-                                <div className="empty-state">
-                                    <span className="empty-icon"><TableCellsSplit/></span>
-                                    <p>No attendance records found</p>
-                                </div>
-                            ) : (
-                                <table className="attendance-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Course</th>
-                                            <th>Session</th>
-                                            <th>Date & Time</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredAttendance.map(record => (
-                                            <tr key={record.id}>
-                                                <td>{record.courseCode}</td>
-                                                <td>{record.sessionName || 'N/A'}</td>
-                                                <td>{new Date(record.markedAt).toLocaleString()}</td>
-                                                <td>
-                                                    <span className={`status-badge status-${record.status}`}>
-                                                        {record.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* QR Scanner Modal */}
-            {showScanner && (
-                <div className="modal-overlay" onClick={handleCloseScanner}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3><Camera /> Scan QR Code</h3>
-                            <button className="btn-close" onClick={handleCloseScanner}>×</button>
-                        </div>
-                        <div id="qr-reader"></div>
-                        <div className="manual-token">
-                            <p>— or enter token manually —</p>
-                            <div className="manual-input-row">
-                                <input
-                                    type="text"
-                                    placeholder="Paste QR token here"
-                                    value={manualToken}
-                                    onChange={e => setManualToken(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && handleAttendanceMark(manualToken)}
-                                />
-                                <button
-                                    className="btn-submit"
-                                    onClick={() => handleAttendanceMark(manualToken)}
-                                >
-                                    Submit
-                                </button>
-                            </div>
-                        </div>
-                        {scanResult && (
-                            <div className={`scan-result ${scanResult.type}`}>
-                                {scanResult.message}
                             </div>
                         )}
                     </div>
-                </div>
-            )}
+                )}
+
+                {activeTab === 'register' && (
+                    <div className="tab-content">
+                        <h2>Available Courses</h2>
+                        {availableCourses.length === 0 ? (
+                            <div className="empty-state">
+                                <p>No available courses to enroll in.</p>
+                            </div>
+                        ) : (
+                            <div className="courses-grid">
+                                {availableCourses.map(course => (
+                                    <div key={course.id} className="course-card">
+                                        <div className="course-code">{course.courseCode}</div>
+                                        <div className="course-name">{course.courseName}</div>
+                                        <div className="course-details">
+                                            <p><strong>Teacher:</strong> {course.teacherName}</p>
+                                            <p><strong>Credits:</strong> {course.credits}</p>
+                                            <p><strong>Department:</strong> {course.departmentName}</p>
+                                        </div>
+                                        <button 
+                                            className="enroll-btn"
+                                            onClick={() => handleEnroll(course.id)}
+                                            disabled={enrolling}
+                                        >
+                                            {enrolling ? 'Enrolling...' : 'Enroll Now'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'mark' && (
+                    <div className="tab-content">
+                        <div className="qr-scanner-section">
+                            <h2>📱 Mark Attendance</h2>
+                            <p style={{ color: '#666', marginBottom: '30px' }}>
+                                Enter the QR token from your teacher's display
+                            </p>
+
+                            {attendanceMessage.text && (
+                                <div 
+                                    style={{
+                                        padding: '15px 20px',
+                                        borderRadius: '10px',
+                                        marginBottom: '20px',
+                                        background: attendanceMessage.type === 'success' ? '#d4edda' : '#f8d7da',
+                                        color: attendanceMessage.type === 'success' ? '#155724' : '#721c24',
+                                        border: `1px solid ${attendanceMessage.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+                                        fontWeight: '600',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    {attendanceMessage.text}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleMarkAttendance}>
+                                <div className="qr-input-container">
+                                    <input
+                                        type="text"
+                                        className="qr-input"
+                                        placeholder="Enter QR token here..."
+                                        value={qrToken}
+                                        onChange={(e) => setQrToken(e.target.value)}
+                                        disabled={marking}
+                                    />
+                                </div>
+
+                                <button 
+                                    type="submit" 
+                                    className="submit-btn"
+                                    disabled={marking || !qrToken.trim()}
+                                >
+                                    {marking ? 'Marking Attendance...' : '✓ Mark Attendance'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'history' && (
+                    <div className="tab-content">
+                        <h2>Attendance History</h2>
+                        {attendanceHistory.length === 0 ? (
+                            <div className="empty-state">
+                                <p>No attendance records found.</p>
+                            </div>
+                        ) : (
+                            <table className="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Course</th>
+                                        <th>Session</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {attendanceHistory.map(record => (
+                                        <tr key={record.id}>
+                                            <td>{new Date(record.markedAt).toLocaleDateString()}</td>
+                                            <td>{record.courseName || 'N/A'}</td>
+                                            <td>{record.sessionName || 'N/A'}</td>
+                                            <td>
+                                                <span className={`status-badge status-${record.status}`}>
+                                                    {record.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

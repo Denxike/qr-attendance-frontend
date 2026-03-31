@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MarkAttendance from './pages/student/MarkAttendance';
+import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard';
 
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
@@ -47,6 +48,7 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route path="/super-admin-dashboard" element={<SuperAdminDashboard />} />
                     
                     {/* Default redirect */}
                     <Route path="/" element={<Navigate to="/login" />} />

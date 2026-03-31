@@ -17,11 +17,35 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = (userData, token) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
+    const login = async (email, password) => {
+    const response = await authAPI.login(email, password);
+    const { token } = response.data;
+    
+    localStorage.setItem('token', token);
+    const decoded = jwtDecode(token);
+    
+    const userData = {
+        userId: decoded.userId,
+        email: decoded.sub,
+        fullName: decoded.fullName,
+        role: decoded.role,
+        studentId: decoded.studentId || null,
+        teacherId: decoded.teacherId || null
     };
+    
+    setUser(userData);
+    
+    // Route based on role
+    if (decoded.role === 'SUPER_ADMIN') {
+        navigate('/super-admin-dashboard');
+    } else if (decoded.role === 'ADMIN') {
+        navigate('/admin-dashboard');
+    } else if (decoded.role === 'TEACHER') {
+        navigate('/teacher-dashboard');
+    } else if (decoded.role === 'STUDENT') {
+        navigate('/student-dashboard');
+    }
+};
 
     const logout = () => {
         localStorage.removeItem('token');
