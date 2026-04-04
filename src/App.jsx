@@ -12,8 +12,8 @@ const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 function App() {
     return (
-        <AuthProvider>
             <Router>
+                <AuthProvider>
                 {/* Wrap Routes in Suspense */}
                 <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
                     <Routes>
@@ -56,8 +56,8 @@ function App() {
                       <Route path="/mark-attendance" element={<MarkAttendance />} />
                     </Routes>
                 </Suspense>
+                </AuthProvider>
             </Router>
-        </AuthProvider>
     );
 }
 
